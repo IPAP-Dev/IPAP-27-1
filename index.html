@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#2f6fed">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+<title>27-1 Study Program</title>
+<style>
+:root{color-scheme:light dark;--bg:#f6f7f9;--card:#fff;--text:#16181d;--muted:#667085;--border:#d9dde5;--accent:#2f6fed;--good:#18794e;--bad:#b42318;--warn:#b54708;--soft:#eef3ff}
+@media(prefers-color-scheme:dark){:root{--bg:#111318;--card:#1b1e25;--text:#f4f5f7;--muted:#a7adba;--border:#343945;--soft:#202b45}}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}main{max-width:980px;margin:auto;padding:18px}.panel{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:16px}h1{margin:0 0 6px}.small{color:var(--muted);font-size:14px;line-height:1.4}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:12px}label{display:block;font-weight:700;font-size:14px}select,button,input,textarea{width:100%;min-height:44px;margin-top:6px;border-radius:9px;border:1px solid var(--border);font-size:16px}select,input,textarea{background:var(--card);color:var(--text);padding:8px 10px}button{cursor:pointer;background:var(--accent);color:#fff;font-weight:700;padding:9px 12px}.secondary{background:transparent!important;color:var(--text)!important}.danger{background:transparent!important;color:var(--bad)!important;border-color:var(--bad)!important}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}.actions button{width:auto;min-width:135px}.hide{display:none!important}.statgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.stat{border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center}.stat b{display:block;font-size:22px}.progress{height:10px;background:var(--border);border-radius:999px;overflow:hidden;margin:12px 0 18px}.progress>div{height:100%;background:var(--accent);width:0}.qtext{font-size:21px;line-height:1.35;font-weight:700;margin:12px 0 16px}.answers{display:grid;gap:10px}.answer{text-align:left;background:transparent;color:var(--text);border:1px solid var(--border);font-weight:500}.answer.correct{border-color:var(--good)}.answer.wrong{border-color:var(--bad)}.feedback{margin-top:14px;padding:12px;border-radius:10px;border:1px solid var(--border)}.feedback.good{border-color:var(--good)}.feedback.bad{border-color:var(--bad)}.bank-item{border-top:1px solid var(--border);padding:10px 0}.notice{border-left:4px solid var(--accent);padding:10px 12px;background:var(--soft);border-radius:8px}.media img{max-width:100%;height:auto;border-radius:10px;border:1px solid var(--border)}@media(max-width:620px){.statgrid{grid-template-columns:repeat(2,1fr)}.actions button{width:100%}}
+</style>
+</head>
+<body>
+<main>
+<section class="panel" id="setup">
+<h1 id="programTitle">27-1 Study Program</h1>
+<p class="small">Reusable adaptive study framework. Replace the placeholder questions with your 27-1 course material as it is added.</p>
+<div class="notice small"><strong>Adaptive mastery:</strong> missed questions enter the Incorrect Bank and remain there until answered correctly 3 times in a row.</div>
+<div class="statgrid" style="margin-top:14px">
+<div class="stat"><b id="bankCount">0</b><span class="small">Incorrect Bank</span></div>
+<div class="stat"><b id="masteredCount">0</b><span class="small">Mastered</span></div>
+<div class="stat"><b id="attemptCount">0</b><span class="small">Attempts</span></div>
+<div class="stat"><b id="accuracy">—</b><span class="small">Accuracy</span></div>
+</div>
+<div class="grid" style="margin-top:16px">
+<label>Section<select id="section"></select></label>
+<label>Question type<select id="type"><option value="All">All types</option><option value="First">First order</option><option value="Second">Second order</option><option value="Image">Image/diagram</option></select></label>
+<label>Quiz size<select id="size"><option>10</option><option selected>25</option><option>50</option><option value="9999">Entire selected pool</option></select></label>
+<label>Study mode<select id="mode"><option value="Adaptive">Adaptive — prioritize missed</option><option value="Random">Random</option><option value="Unseen">New Questions Only</option><option value="Incorrect">Incorrect Bank only</option></select></label>
+</div>
+<div class="actions"><button id="start">Start quiz</button><button id="studyBank" class="secondary">Study Incorrect Bank</button></div>
+<details><summary>View whole question bank</summary><p id="wholeCount" class="small"></p><div id="wholeBank"></div></details>
+<details><summary>View Incorrect Bank</summary><div id="incorrectList"></div></details>
+<details><summary>View Removed Questions</summary><div id="removedList"></div></details>
+<div class="actions"><button id="saveProgress" class="secondary">Save Progress</button><button id="loadProgress" class="secondary">Load Progress</button><button id="resetProgress" class="danger">Reset Progress</button></div>
+<input id="progressFile" type="file" accept=".json,application/json" hidden>
+</section>
+
+<section class="panel hide" id="quiz">
+<div style="display:flex;justify-content:space-between;gap:10px"><strong id="counter"></strong><span id="scoreline" class="small"></span></div>
+<div class="progress"><div id="bar"></div></div>
+<div id="meta" class="small"></div>
+<div id="qtext" class="qtext"></div>
+<div id="media" class="media"></div>
+<div id="answers" class="answers"></div>
+<div id="feedback" class="feedback hide"></div>
+<div class="actions"><button id="prev" class="secondary">Previous</button><button id="next">Next</button><button id="remove" class="danger">Remove bad question</button><button id="quit" class="secondary">End quiz</button></div>
+</section>
+
+<section class="panel hide" id="results">
+<h2>Quiz complete</h2>
+<p id="resultText"></p>
+<div class="actions"><button id="again">New quiz</button><button id="home" class="secondary">Change settings</button></div>
+</section>
+</main>
+
+<script>
+const PROGRAM_NAME="27-1 Study Program";
+const STORAGE_KEY="studyProgram::27-1::v1";
+const MASTER_STREAK=3;
+
+/*
+QUESTION FORMAT FOR FUTURE IMPORTS
+{
+ id:"271-0001", section:"Day 1", type:"First",
+ q:"Question text?",
+ choices:["A","B","C","D","E"], correct:0,
+ explanation:"Why the answer is correct.",
+ media:null
+}
+For picture questions, media can be a data URL or a relative image path.
+*/
+const QUESTION_BANK=[
+ {id:"271-DEMO-0001",section:"Starter",type:"First",q:"This is a placeholder question used to verify the repository is working. Which option should you select?",choices:["Placeholder A","Placeholder B","Select this answer","Placeholder D","Placeholder E"],correct:2,explanation:"The starter bank marks the third option as correct.",media:null},
+ {id:"271-DEMO-0002",section:"Starter",type:"Second",q:"After this starter site works, what should happen next?",choices:["Delete the repository","Add your 27-1 slides and build the real bank","Disable GitHub Pages","Remove progress tracking","Rename index.html"],correct:1,explanation:"The framework is designed for us to add your 27-1 course material next.",media:null},
+ {id:"271-DEMO-0003",section:"Starter",type:"Image",q:"Image questions are supported by the same framework. What is this demo testing?",choices:["That image-type questions can exist","That progress cannot save","That GitHub Pages is disabled","That only four choices are allowed","That sections cannot be added"],correct:0,explanation:"The framework supports image/diagram question records and five-choice questions.",media:null}
+];
+
+const $=id=>document.getElementById(id);
+let progress=loadProgress();
+let quiz=[],pos=0,score=0,answered={};
+
+function blankProgress(){return{attempts:0,correct:0,bank:{},mastered:{},seen:{},removed:{}}}
+function loadProgress(){try{return Object.assign(blankProgress(),JSON.parse(localStorage.getItem(STORAGE_KEY)||"{}"))}catch(e){return blankProgress()}}
+function saveLocal(){localStorage.setItem(STORAGE_KEY,JSON.stringify(progress));updateStats()}
+function activeQuestions(){return QUESTION_BANK.filter(q=>!progress.removed[q.id])}
+function sections(){return [...new Set(activeQuestions().map(q=>q.section))]}
+function setupSections(){
+ const s=$("section"); s.innerHTML="";
+ sections().forEach(x=>{const o=document.createElement("option");o.value=x;o.textContent=x;s.appendChild(o)});
+ const a=document.createElement("option");a.value="All";a.textContent="All sections";s.appendChild(a)
+}
+function updateStats(){
+ $("bankCount").textContent=Object.keys(progress.bank||{}).length;
+ $("masteredCount").textContent=Object.keys(progress.mastered||{}).length;
+ $("attemptCount").textContent=progress.attempts||0;
+ $("accuracy").textContent=progress.attempts?Math.round(100*(progress.correct||0)/progress.attempts)+"%":"—";
+ renderLists()
+}
+function renderLists(){
+ const all=activeQuestions(); $("wholeCount").textContent=all.length+" active questions";
+ $("wholeBank").innerHTML=all.map(q=>`<div class="bank-item"><strong>${esc(q.section)} • ${esc(q.type)}</strong><br>${esc(q.q)}<br><span class="small">Answer: ${esc(q.choices[q.correct])}</span></div>`).join("");
+ const ib=Object.keys(progress.bank||{}).map(id=>QUESTION_BANK.find(q=>q.id===id)).filter(Boolean);
+ $("incorrectList").innerHTML=ib.length?ib.map(q=>`<div class="bank-item">${esc(q.q)}</div>`).join(""):'<p class="small">Incorrect Bank is empty.</p>';
+ const rm=Object.keys(progress.removed||{}).map(id=>QUESTION_BANK.find(q=>q.id===id)).filter(Boolean);
+ $("removedList").innerHTML=rm.length?rm.map(q=>`<div class="bank-item">${esc(q.q)}<br><button class="secondary" style="width:auto" onclick="restoreQ('${q.id}')">Restore</button></div>`).join(""):'<p class="small">No removed questions.</p>'
+}
+window.restoreQ=id=>{delete progress.removed[id];saveLocal();setupSections()}
+function esc(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function getPool(forceIncorrect=false){
+ let p=activeQuestions();
+ const sec=$("section").value,typ=$("type").value,mode=forceIncorrect?"Incorrect":$("mode").value;
+ if(sec!=="All")p=p.filter(q=>q.section===sec);
+ if(typ!=="All")p=p.filter(q=>q.type===typ);
+ if(mode==="Incorrect")p=p.filter(q=>progress.bank[q.id]);
+ if(mode==="Unseen")p=p.filter(q=>!progress.seen[q.id]);
+ if(mode==="Adaptive"){
+   const bank=p.filter(q=>progress.bank[q.id]), clean=p.filter(q=>!progress.bank[q.id]);
+   p=[...bank,...bank,...clean];
+ }
+ return shuffle(p)
+}
+function start(forceIncorrect=false){
+ let p=getPool(forceIncorrect);
+ if(!p.length){alert("No questions match the selected pool yet.");return}
+ let n=parseInt($("size").value,10); if(n===9999)n=p.length;
+ quiz=p.slice(0,Math.min(n,p.length));pos=0;score=0;answered={};
+ $("setup").classList.add("hide");$("results").classList.add("hide");$("quiz").classList.remove("hide");render()
+}
+function render(){
+ const q=quiz[pos]; if(!q){finish();return}
+ $("counter").textContent=`Question ${pos+1} of ${quiz.length}`;
+ $("scoreline").textContent=`Score: ${score} / ${Object.keys(answered).length}`;
+ $("bar").style.width=((pos+1)/quiz.length*100)+"%";
+ $("meta").textContent=`${q.section} • ${q.type}`;
+ $("qtext").textContent=q.q;
+ $("media").innerHTML=q.media?`<img src="${q.media}" alt="Question image">`:"";
+ $("answers").innerHTML="";
+ q.choices.forEach((c,i)=>{
+   const b=document.createElement("button");b.className="answer";b.textContent=c;b.disabled=answered[pos]!==undefined;
+   if(answered[pos]!==undefined){if(i===q.correct)b.classList.add("correct");if(i===answered[pos]&&i!==q.correct)b.classList.add("wrong")}
+   b.onclick=()=>answer(i);$("answers").appendChild(b)
+ });
+ if(answered[pos]!==undefined){$("feedback").classList.remove("hide");$("feedback").textContent=q.explanation||""}else{$("feedback").classList.add("hide");$("feedback").textContent=""}
+ $("prev").disabled=pos===0;$("next").disabled=answered[pos]===undefined;$("next").textContent=pos===quiz.length-1?"Finish quiz":"Next"
+}
+function answer(i){
+ if(answered[pos]!==undefined)return;
+ const q=quiz[pos];answered[pos]=i;progress.attempts++;progress.seen[q.id]=true;
+ if(i===q.correct){score++;progress.correct++;if(progress.bank[q.id]){progress.bank[q.id].streak=(progress.bank[q.id].streak||0)+1;if(progress.bank[q.id].streak>=MASTER_STREAK){delete progress.bank[q.id];progress.mastered[q.id]=true}}}
+ else{progress.bank[q.id]={streak:0}}
+ saveLocal();render()
+}
+function finish(){
+ $("quiz").classList.add("hide");$("results").classList.remove("hide");
+ $("resultText").textContent=`You scored ${score} out of ${quiz.length}.`
+}
+$("start").onclick=()=>start(false);$("studyBank").onclick=()=>start(true);
+$("prev").onclick=()=>{if(pos>0){pos--;render()}};
+$("next").onclick=()=>{if(answered[pos]===undefined)return;if(pos<quiz.length-1){pos++;render()}else finish()};
+$("quit").onclick=()=>{finish()};
+$("again").onclick=()=>{start(false)};$("home").onclick=()=>{$("results").classList.add("hide");$("setup").classList.remove("hide")};
+$("remove").onclick=()=>{const q=quiz[pos];if(confirm("Remove this question from future quizzes?")){progress.removed[q.id]=true;saveLocal();quiz.splice(pos,1);if(pos>=quiz.length)pos=Math.max(0,quiz.length-1);if(quiz.length)render();else finish()}};
+$("saveProgress").onclick=()=>{
+ const blob=new Blob([JSON.stringify(progress,null,2)],{type:"application/json"});
+ const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="27-1-study-progress.json";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)
+};
+$("loadProgress").onclick=()=>$("progressFile").click();
+$("progressFile").onchange=async e=>{const f=e.target.files[0];if(!f)return;try{progress=Object.assign(blankProgress(),JSON.parse(await f.text()));saveLocal();alert("Progress loaded.")}catch(err){alert("That progress file could not be loaded.")}e.target.value=""};
+$("resetProgress").onclick=()=>{if(confirm("Reset all local study progress?")){progress=blankProgress();saveLocal()}};
+
+setupSections();updateStats();
+if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}))}
+</script>
+</body>
+</html>
